@@ -1126,7 +1126,7 @@
                     info.dayEl.classList.add("bg-purple-500", "text-white");
 
                     try {
-                        const res = await fetch(`http://localhost:3000/eventos?data=${dataSelecionada}`);
+                        const res = await fetch(`https://teste1-7936.onrender.com/eventos?data=${dataSelecionada}`);
                         const resultado = await res.json();
                         const ocupados = resultado.horariosBloqueados || [];
                         gerarHorarios(ocupados, dataSelecionada);
@@ -1183,7 +1183,7 @@
                 console.log("📩 Dados enviados do formulário:", body);
 
                 try {
-                    const res = await fetch("http://localhost:3000/agendar", {
+                    const res = await fetch("https://teste1-7936.onrender.com/agendar", {
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(body)
