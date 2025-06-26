@@ -2,32 +2,30 @@ const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
+
+// ✅ CORS configurado para seu front-end
 app.use(cors({
-  origin: 'https://ygos-96.github.io' // Libera apenas seu front
+  origin: 'https://ygos-96.github.io'
 }));
+
 app.use(bodyParser.json());
 
 // ✅ Carregar credenciais do arquivo local
 let credentials;
 try {
   const credPath = path.join(__dirname, 'service-account.json');
-  const raw = fs.readFileSync(credPath, 'utf8');
+  const raw = fs.readFileSync(credPath);
   credentials = JSON.parse(raw);
-
-  // Corrige \n se vierem escapados (útil em alguns editores)
-  if (credentials.private_key.includes('\\n')) {
-    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
-  }
 } catch (err) {
-  console.error("❌ Erro ao carregar o arquivo service-account.json:", err.message);
+  console.error("❌ Erro ao carregar arquivo de credenciais:", err.message);
   process.exit(1);
 }
 
-// ✅ Autenticação com Google
+// ✅ Autenticação com o Google Calendar
 const auth = new google.auth.GoogleAuth({
   credentials,
   scopes: ['https://www.googleapis.com/auth/calendar']
@@ -36,7 +34,7 @@ const auth = new google.auth.GoogleAuth({
 const calendar = google.calendar({ version: 'v3', auth });
 const CALENDAR_ID = '826eba34b6354dece11e4348d148ae5990d1dbb5530ec1388f424a326030e338@group.calendar.google.com';
 
-// ✅ Rota para agendar
+// ✅ Rota para agendamento
 app.post('/agendar', async (req, res) => {
   console.log("📩 POST /agendar recebido:", req.body);
   const { nome, email, telefone, data, horario, tipo } = req.body;
@@ -87,6 +85,7 @@ app.get('/eventos', async (req, res) => {
     });
 
     const horariosBloqueados = [];
+
     response.data.items.forEach(ev => {
       if (!ev.start.dateTime || !ev.end.dateTime) return;
 
@@ -95,7 +94,7 @@ app.get('/eventos', async (req, res) => {
 
       const horaAtual = new Date(inicio);
       while (horaAtual < fim) {
-        const horaStr = horaAtual.toTimeString().slice(0, 5); // HH:MM
+        const horaStr = horaAtual.toTimeString().slice(0, 5);
         if (!horariosBloqueados.includes(horaStr)) {
           horariosBloqueados.push(horaStr);
         }
@@ -110,7 +109,7 @@ app.get('/eventos', async (req, res) => {
   }
 });
 
-// ✅ Porta para Render ou local
+// ✅ Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
