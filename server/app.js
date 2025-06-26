@@ -20,6 +20,12 @@ try {
   const credPath = path.join(__dirname, 'service-account.json');
   const raw = fs.readFileSync(credPath);
   credentials = JSON.parse(raw);
+
+  // Corrige \n literais, caso existam
+  if (credentials.private_key) {
+    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+  }
+
 } catch (err) {
   console.error("❌ Erro ao carregar arquivo de credenciais:", err.message);
   process.exit(1);
