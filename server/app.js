@@ -8,7 +8,7 @@ app.use(cors());
 app.use(bodyParser.json());
 
 const auth = new google.auth.GoogleAuth({
-  keyFile: 'service-account.json',
+  credentials: JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON),
   scopes: ['https://www.googleapis.com/auth/calendar']
 });
 
