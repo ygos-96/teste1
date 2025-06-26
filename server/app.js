@@ -2,27 +2,28 @@ const express = require('express');
 const { google } = require('googleapis');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 app.use(cors({
-  origin: 'https://ygos-96.github.io'
+  origin: 'https://ygos-96.github.io' // Libera apenas seu front
 }));
 app.use(bodyParser.json());
 
-// ✅ Carregar e ajustar credenciais da variável de ambiente
+// ✅ Carregar credenciais do arquivo local
 let credentials;
 try {
-  if (!process.env.GOOGLE_CREDENTIALS_JSON) {
-    throw new Error("Variável de ambiente GOOGLE_CREDENTIALS_JSON não definida.");
-  }
-  credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+  const credPath = path.join(__dirname, 'service-account.json');
+  const raw = fs.readFileSync(credPath, 'utf8');
+  credentials = JSON.parse(raw);
 
-  // Corrige \n literais para quebras reais na chave privada
-  if (credentials.private_key) {
+  // Corrige \n se vierem escapados (útil em alguns editores)
+  if (credentials.private_key.includes('\\n')) {
     credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
   }
 } catch (err) {
-  console.error("❌ Erro ao carregar credenciais do Google:", err.message);
+  console.error("❌ Erro ao carregar o arquivo service-account.json:", err.message);
   process.exit(1);
 }
 
@@ -109,7 +110,7 @@ app.get('/eventos', async (req, res) => {
   }
 });
 
-// ✅ Escuta na porta da Render ou 3000 local
+// ✅ Porta para Render ou local
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
