@@ -7,28 +7,33 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// Verificação e parsing da variável de ambiente
+// ✅ Carregar e ajustar credenciais da variável de ambiente
 let credentials;
 try {
   if (!process.env.GOOGLE_CREDENTIALS_JSON) {
     throw new Error("Variável de ambiente GOOGLE_CREDENTIALS_JSON não definida.");
   }
   credentials = JSON.parse(process.env.GOOGLE_CREDENTIALS_JSON);
+
+  // Corrige \n literais para quebras reais na chave privada
+  if (credentials.private_key) {
+    credentials.private_key = credentials.private_key.replace(/\\n/g, '\n');
+  }
 } catch (err) {
   console.error("❌ Erro ao carregar credenciais do Google:", err.message);
   process.exit(1);
 }
 
-// Autenticação
+// ✅ Autenticação com Google
 const auth = new google.auth.GoogleAuth({
-  credentials: credentials,
+  credentials,
   scopes: ['https://www.googleapis.com/auth/calendar']
 });
 
 const calendar = google.calendar({ version: 'v3', auth });
 const CALENDAR_ID = '826eba34b6354dece11e4348d148ae5990d1dbb5530ec1388f424a326030e338@group.calendar.google.com';
 
-// Rota POST /agendar
+// ✅ Rota para agendar
 app.post('/agendar', async (req, res) => {
   console.log("📩 POST /agendar recebido:", req.body);
   const { nome, email, telefone, data, horario, tipo } = req.body;
@@ -57,7 +62,7 @@ app.post('/agendar', async (req, res) => {
   }
 });
 
-// Rota GET /eventos
+// ✅ Rota para listar horários ocupados
 app.get('/eventos', async (req, res) => {
   console.log("📆 GET /eventos recebido:", req.query);
   const { data } = req.query;
@@ -78,10 +83,8 @@ app.get('/eventos', async (req, res) => {
       orderBy: 'startTime'
     });
 
-    const eventosRaw = response.data.items;
     const horariosBloqueados = [];
-
-    eventosRaw.forEach(ev => {
+    response.data.items.forEach(ev => {
       if (!ev.start.dateTime || !ev.end.dateTime) return;
 
       const inicio = new Date(ev.start.dateTime);
@@ -99,12 +102,12 @@ app.get('/eventos', async (req, res) => {
 
     res.json({ horariosBloqueados });
   } catch (error) {
-    console.error("❌ Erro ao buscar eventos:", error);
+    console.error("❌ Erro ao buscar eventos:", error.message);
     res.status(500).json({ message: 'Erro ao buscar eventos', error: error.message });
   }
 });
 
-// Escuta na porta correta (Render usa process.env.PORT)
+// ✅ Escuta na porta da Render ou 3000 local
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
